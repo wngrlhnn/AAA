@@ -6,6 +6,8 @@ import android.content.*;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.view.*;
+import android.widget.*;
+import android.graphics.Color;
 import android.webkit.*;
 import androidx.webkit.WebViewAssetLoader;
 
@@ -13,6 +15,9 @@ public class MainActivity extends Activity {
     WebView web;
     ValueCallback<Uri[]> chooser;
     WebViewAssetLoader assetLoader;
+    FrameLayout fullscreenContainer;
+    WebChromeClient.CustomViewCallback fullscreenCallback;
+    long lastBackPress = 0;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -66,9 +71,18 @@ public class MainActivity extends Activity {
                 return true;
             }
             @Override public void onShowCustomView(View v, CustomViewCallback cb) {
-                setContentView(v);
+                fullscreenCallback = cb;
+                fullscreenContainer = new FrameLayout(MainActivity.this);
+                fullscreenContainer.setBackgroundColor(Color.BLACK);
+                fullscreenContainer.addView(v, new FrameLayout.LayoutParams(-1, -1));
+                setContentView(fullscreenContainer);
             }
             @Override public void onHideCustomView() {
+                if (fullscreenContainer != null) {
+                    fullscreenContainer.removeAllViews();
+                    fullscreenContainer = null;
+                }
+                fullscreenCallback = null;
                 setContentView(web);
             }
         });
@@ -137,7 +151,42 @@ public class MainActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
-        if (web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        if (fullscreenContainer != null) {
+            if (fullscreenCallback != null) fullscreenCallback.onCustomViewHidden();
+            else {
+                fullscreenContainer = null;
+                setContentView(web);
+            }
+            return;
+        }
+        if (web != null) {
+            web.evaluateJavascript("(document.getElementById('playerView')?.style.display==='block')", value -> {
+                if ("true".equals(value)) {
+                    web.evaluateJavascript("(document.getElementById('gameMenu')?.classList.contains('open'))", menu -> {
+                        if ("true".equals(menu)) {
+                            web.evaluateJavascript("document.getElementById('gameMenu').classList.remove('open')", null);
+                        } else {
+                            web.evaluateJavascript("document.getElementById('back')?.click()", null);
+                        }
+                    });
+                } else if (web.canGoBack()) {
+                    web.goBack();
+                } else {
+                    confirmExit();
+                }
+            });
+            return;
+        }
+        confirmExit();
+    }
+
+    private void confirmExit() {
+        long now = System.currentTimeMillis();
+        if (now - lastBackPress < 2000) {
+            finish();
+            return;
+        }
+        lastBackPress = now;
+        Toast.makeText(this, "לחץ שוב על חזרה כדי לצאת", Toast.LENGTH_SHORT).show();
     }
 }
