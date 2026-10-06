@@ -36,7 +36,12 @@ print(assets[0])
 PY
 )
           curl -L --fail "$url" -o /tmp/ruffle.zip
-          unzip -q /tmp/ruffle.zip -d app/src/main/assets/ruffle
+          rm -rf app/src/main/assets/ruffle/*
+          unzip -q /tmp/ruffle.zip -d /tmp/ruffle-unpacked
+          ruffle_js=$(find /tmp/ruffle-unpacked -type f -name 'ruffle.js' -print -quit)
+          test -n "$ruffle_js"
+          ruffle_root=$(dirname "$ruffle_js")
+          cp -R "$ruffle_root"/. app/src/main/assets/ruffle/
           test -f app/src/main/assets/ruffle/ruffle.js
       - name: Prepare offline web app
         shell: bash
