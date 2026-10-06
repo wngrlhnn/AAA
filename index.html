@@ -48,15 +48,24 @@ function openGameMenu(){if($("#playerView").style.display!=="block")return;gameM
 drop.onclick=()=>fi.click();
 document.addEventListener("touchstart",e=>{
   if($("#playerView").style.display!=="block" || e.touches.length!==2){touchStart=null;return}
-  touchStart={x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2};
+  touchStart={
+    x:(e.touches[0].clientX+e.touches[1].clientX)/2,
+    y:(e.touches[0].clientY+e.touches[1].clientY)/2
+  };
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(!touchStart || $("#playerView").style.display!=="block" || e.touches.length<1)return;
+  const x=e.touches.length>=2
+    ? (e.touches[0].clientX+e.touches[1].clientX)/2
+    : e.touches[0].clientX;
+  if(x-touchStart.x>90){
+    openGameMenu();
+    touchStart=null;
+  }
 },{passive:true});
 document.addEventListener("touchend",e=>{
   if(!touchStart)return;
-  const endX=e.changedTouches.length>=2
-    ? (e.changedTouches[0].clientX+e.changedTouches[1].clientX)/2
-    : e.changedTouches[0]?.clientX;
-  if(typeof endX==="number" && endX-touchStart.x>90){openGameMenu()}
-  touchStart=null;
+  if(e.touches.length===0)touchStart=null;
 },{passive:true});
 $("#menuResume").onclick=closeGameMenu;
 $("#menuRotate").onclick=()=>{orientation=orientation==="portrait"?"landscape":"portrait";if(window.AndroidBridge)AndroidBridge.setOrientation(orientation);$("#menuRotate").textContent=orientation==="landscape"?"↕️ סיבוב מסך — לאורך":"↔️ סיבוב מסך — לרוחב"};
