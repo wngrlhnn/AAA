@@ -73,4 +73,14 @@ document.querySelectorAll(".controlModeBtn").forEach(b=>b.onclick=()=>setControl
 initControls();
 $("#gameMenu").onclick=e=>{if(e.target===gameMenu)closeGameMenu()};
 $("#menuFull").onclick=()=>$("#full").click();
+document.addEventListener("fullscreenchange",()=>{
+  const inFullscreen=!!document.fullscreenElement;
+  if(inFullscreen){
+    controls.style.display="none";
+    closeGameMenu();
+  }else{
+    controls.style.display="";
+    setControlMode(controlMode||"buttons");
+  }
+});
 $("#menuBack").onclick=()=>{closeGameMenu();$("#back").click()};$("#quickBack").onclick=()=>$("#back").click();drop.onclick=()=>fi.click();drop.ondragover=e=>e.preventDefault();drop.ondrop=e=>{e.preventDefault();add([...e.dataTransfer.files])};$("#search").oninput=render;$("#sort").onchange=render;document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");filter=b.dataset.filter;render()});$("#back").onclick=()=>{closeGameMenu();releaseAll();setControlMode("none");if(window.AndroidBridge)AndroidBridge.resetOrientation();$("#playerView").style.display="none";$("#library").style.display="block";$("#shell").innerHTML=""};init().then(all).then(x=>{games=x;render()});if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{})})();</script><div id="orientationModal" class="orientationModal"><div class="orientationBox"><h2>בחר כיוון למשחק</h2><p class="meta">איך תרצה לשחק?</p><div class="orientationChoices"><button id="portrait">↕️<br>לאורך</button><button id="landscape">↔️<br>לרוחב</button></div></div></div><div id="gameMenu" class="gameMenu" aria-hidden="true"><div class="gameMenuBox" role="dialog" aria-label="תפריט משחק"><h3>תפריט משחק</h3><div class="gameMenuHint">החלקה עם שתי אצבעות ימינה פותחת את התפריט</div><div class="gameMenuActions"><button id="menuResume">▶ המשך משחק</button><button id="menuRotate">↔️ סיבוב מסך</button><button id="menuFull">⛶ מסך מלא</button><button class="controlModeBtn" data-mode="joystick">🕹️ ג׳ויסטיק + כפתורים</button><button class="controlModeBtn" data-mode="buttons">🎮 רק כפתורים</button><button class="controlModeBtn" data-mode="none">🚫 כיבוי בקרות</button><button id="menuBack" class="danger">← חזרה למשחקים</button></div></div></div></body></html>
