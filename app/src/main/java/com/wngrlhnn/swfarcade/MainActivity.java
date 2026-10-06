@@ -60,7 +60,8 @@ public class MainActivity extends Activity {
                 Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*");
-                i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"*/*"});
+                i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/x-shockwave-flash", "application/octet-stream", "*/*"});
+                i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(i, 42);
                 return true;
             }
@@ -121,7 +122,16 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int r, int c, Intent d) {
         super.onActivityResult(r, c, d);
         if (r == 42 && chooser != null) {
-            chooser.onReceiveValue(c == RESULT_OK && d != null && d.getData() != null ? new Uri[]{d.getData()} : null);
+            if (c == RESULT_OK && d != null) {
+                if (d.getClipData() != null) {
+                    int n = d.getClipData().getItemCount();
+                    Uri[] uris = new Uri[n];
+                    for (int i = 0; i < n; i++) uris[i] = d.getClipData().getItemAt(i).getUri();
+                    chooser.onReceiveValue(uris);
+                } else if (d.getData() != null) {
+                    chooser.onReceiveValue(new Uri[]{d.getData()});
+                } else chooser.onReceiveValue(null);
+            } else chooser.onReceiveValue(null);
             chooser = null;
         }
     }
