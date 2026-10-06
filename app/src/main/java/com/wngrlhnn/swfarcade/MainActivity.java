@@ -3,11 +3,11 @@ package com.wngrlhnn.swfarcade;
 import android.app.*;
 import android.os.*;
 import android.content.*;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
-import android.webkit.*;
 import android.view.*;
+import android.webkit.*;
 import androidx.webkit.WebViewAssetLoader;
-import java.util.*;
 
 public class MainActivity extends Activity {
     WebView web;
@@ -51,6 +51,8 @@ public class MainActivity extends Activity {
             }
         });
 
+        web.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
                 if (chooser != null) chooser.onReceiveValue(null);
@@ -72,6 +74,48 @@ public class MainActivity extends Activity {
 
         setContentView(web);
         web.loadUrl("https://appassets.androidplatform.net/assets/index.html");
+    }
+
+    class AndroidBridge {
+        @JavascriptInterface public void setOrientation(String orientation) {
+            runOnUiThread(() -> {
+                if ("landscape".equals(orientation)) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                } else {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                }
+            });
+        }
+
+        @JavascriptInterface public void resetOrientation() {
+            runOnUiThread(() -> setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
+        }
+    }
+
+    private void sendVolumeKey(String key) {
+        if (web == null) return;
+        String js = "window.dispatchEvent(new KeyboardEvent('keydown',{key:'" + key + "',code:'" + key + "',bubbles:true,cancelable:true}));"
+                  + "window.dispatchEvent(new KeyboardEvent('keyup',{key:'" + key + "',code:'" + key + "',bubbles:true,cancelable:true}));";
+        web.evaluateJavascript(js, null);
+    }
+
+    @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            sendVolumeKey("ArrowUp");
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            sendVolumeKey("ArrowDown");
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
     }
 
     @Override protected void onActivityResult(int r, int c, Intent d) {
