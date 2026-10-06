@@ -1,7 +1,35 @@
 plugins { id 'com.android.application' }
 
-android { namespace 'com.wngrlhnn.swfarcade'; compileSdk 35
-    defaultConfig { applicationId 'com.wngrlhnn.swfarcade'; minSdk 23; targetSdk 35; versionCode 2; versionName '1.1' }
+android {
+    namespace 'com.wngrlhnn.swfarcade'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.wngrlhnn.swfarcade'
+        minSdk 23
+        targetSdk 35
+        versionCode 3
+        versionName '1.2'
+    }
+
+    signingConfigs {
+        appRelease {
+            storeFile file('swfarcade.keystore')
+            storePassword 'swfarcade'
+            keyAlias 'swfarcade'
+            keyPassword 'swfarcade'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.appRelease
+        }
+        release {
+            signingConfig signingConfigs.appRelease
+            minifyEnabled false
+        }
+    }
 }
 
 dependencies {
