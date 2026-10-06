@@ -62,11 +62,19 @@ public class MainActivity extends Activity {
             @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
                 if (chooser != null) chooser.onReceiveValue(null);
                 chooser = cb;
-                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                Intent i;
+                try {
+                    i = p.createIntent();
+                } catch (Exception ex) {
+                    i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                }
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*");
                 i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/x-shockwave-flash", "application/octet-stream", "*/*"});
                 i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
                 startActivityForResult(i, 42);
                 return true;
             }
@@ -143,11 +151,23 @@ public class MainActivity extends Activity {
                     for (int i = 0; i < n; i++) uris[i] = d.getClipData().getItemAt(i).getUri();
                     chooser.onReceiveValue(uris);
                 } else if (d.getData() != null) {
-                    chooser.onReceiveValue(new Uri[]{d.getData()});
+                    Uri uri = d.getData();
+                    persistReadPermission(uri);
+                    chooser.onReceiveValue(new Uri[]{uri});
                 } else chooser.onReceiveValue(null);
             } else chooser.onReceiveValue(null);
             chooser = null;
         }
+    }
+
+    private void persistReadPermission(Uri uri) {
+        try {
+            if (Build.VERSION.SDK_INT >= 19) {
+                getContentResolver().takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                );
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override public void onBackPressed() {
