@@ -15,15 +15,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
       - name: Download official Ruffle self-hosted package
         shell: bash
         run: |
@@ -39,9 +42,12 @@ jobs:
           ruffle_root="$(dirname "$ruffle_js")"
           cp -R "$ruffle_root"/. app/src/main/assets/ruffle/
           test -f app/src/main/assets/ruffle/ruffle.js
-      - name: Prepare offline web app
+
+      - name: Prepare complete offline web app
         shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets
           python3 - <<'PY'
           from pathlib import Path
           p = Path("index.html")
@@ -49,8 +55,15 @@ jobs:
           s = s.replace("https://unpkg.com/@ruffle-rs/ruffle", "ruffle/ruffle.js")
           p.write_text(s)
           PY
+          cp index.html app/src/main/assets/index.html
+          cp manifest.webmanifest app/src/main/assets/manifest.webmanifest
+          cp sw.js app/src/main/assets/sw.js
+          test -f app/src/main/assets/index.html
+          test -f app/src/main/assets/ruffle/ruffle.js
+
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
