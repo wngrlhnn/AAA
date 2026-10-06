@@ -1,9 +1,10 @@
 name: Build Android APK
-# Trigger build from repository updates
+
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -28,31 +29,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p app/src/main/assets/ruffle
-          url=$(python3 - <<'PY'
-import json, urllib.request
-r=json.load(urllib.request.urlopen('https://api.github.com/repos/ruffle-rs/ruffle/releases/latest'))
-assets=[a['browser_download_url'] for a in r['assets'] if 'web-selfhosted.zip' in a['name']]
-print(assets[0])
-PY
-)
+          url="$(python3 -c "import json,urllib.request; r=json.load(urllib.request.urlopen('https://api.github.com/repos/ruffle-rs/ruffle/releases/latest')); print(next(a['browser_download_url'] for a in r['assets'] if 'web-selfhosted.zip' in a['name']))")"
           curl -L --fail "$url" -o /tmp/ruffle.zip
           rm -rf app/src/main/assets/ruffle/*
+          rm -rf /tmp/ruffle-unpacked
           unzip -q /tmp/ruffle.zip -d /tmp/ruffle-unpacked
-          ruffle_js=$(find /tmp/ruffle-unpacked -type f -name 'ruffle.js' -print -quit)
+          ruffle_js="$(find /tmp/ruffle-unpacked -type f -name 'ruffle.js' -print -quit)"
           test -n "$ruffle_js"
-          ruffle_root=$(dirname "$ruffle_js")
+          ruffle_root="$(dirname "$ruffle_js")"
           cp -R "$ruffle_root"/. app/src/main/assets/ruffle/
           test -f app/src/main/assets/ruffle/ruffle.js
       - name: Prepare offline web app
         shell: bash
         run: |
           python3 - <<'PY'
-from pathlib import Path
-p=Path('index.html')
-s=p.read_text()
-s=s.replace('https://unpkg.com/@ruffle-rs/ruffle','ruffle/ruffle.js')
-p.write_text(s)
-PY
+          from pathlib import Path
+          p = Path("index.html")
+          s = p.read_text()
+          s = s.replace("https://unpkg.com/@ruffle-rs/ruffle", "ruffle/ruffle.js")
+          p.write_text(s)
+          PY
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
       - name: Upload APK
