@@ -57,8 +57,8 @@ public class MainActivity extends Activity {
                 chooser = cb;
                 Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
-                i.setType("application/x-shockwave-flash");
-                i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/x-shockwave-flash","application/octet-stream"});
+                i.setType("*/*");
+                i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"*/*"});
                 startActivityForResult(i, 42);
                 return true;
             }
