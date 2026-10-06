@@ -1,0 +1,57 @@
+name: Build Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Download official Ruffle self-hosted package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/ruffle
+          url=$(python3 - <<'PY'
+import json, urllib.request
+r=json.load(urllib.request.urlopen('https://api.github.com/repos/ruffle-rs/ruffle/releases/latest'))
+assets=[a['browser_download_url'] for a in r['assets'] if 'web-selfhosted.zip' in a['name']]
+print(assets[0])
+PY
+)
+          curl -L --fail "$url" -o /tmp/ruffle.zip
+          unzip -q /tmp/ruffle.zip -d app/src/main/assets/ruffle
+          test -f app/src/main/assets/ruffle/ruffle.js
+      - name: Prepare offline web app
+        shell: bash
+        run: |
+          python3 - <<'PY'
+from pathlib import Path
+p=Path('index.html')
+s=p.read_text()
+s=s.replace('https://unpkg.com/@ruffle-rs/ruffle','ruffle/ruffle')
+p.write_text(s)
+PY
+      - name: Build debug APK
+        run: gradle --no-daemon assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SWF-Arcade-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
