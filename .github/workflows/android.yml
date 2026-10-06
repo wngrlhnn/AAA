@@ -1,4 +1,5 @@
 name: Build Android APK
+# Trigger build from repository updates
 on:
   workflow_dispatch:
   push:
